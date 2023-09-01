@@ -1,0 +1,7 @@
+name = "EEGPong"
+uuid = "d358bc4b-2d71-4f75-bcc4-3d168b704a82"
+authors = ["Lee Chih Jung <john.12012000@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+BrainFlow = "abd5acf9-0fc9-4730-984d-e27a37823580"
