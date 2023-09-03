@@ -6,7 +6,7 @@ using BrainFlow
 BrainFlow.enable_dev_logger(BrainFlow.BOARD_CONTROLLER)
 
 params = BrainFlowInputParams()
-board_shim = BrainFlow.BoardShim(BrainFlow.SYNTHETIC_BOARD, params)
+board_shim = BrainFlow.BoardShim(BrainFlow.CYTON_BOARD, params)
 
 BrainFlow.prepare_session(board_shim)
 BrainFlow.start_stream(board_shim)
