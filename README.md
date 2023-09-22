@@ -3,6 +3,6 @@ This project is one of 3 to be put on our showcase during Freshers's Fair in Oct
 
 ## Status
 
-- [ ] EEG Data Collection Software
+- [x] EEG Data Collection Software
 - [ ] Real-Time Visualisation of Changes
 - [ ] ML Model for EEG Control
