@@ -1,27 +1,6 @@
---[[
-    GD50 2018
-    Pong Remake
-
-    pong-12
-    "The Resize Update"
-
-    Author: Colton Ogden
-    cogden@cs50.harvard.edu
-
-    Originally programmed by Atari in 1972. Features two
-    paddles, controlled by players, with the goal of getting
-    the ball past your opponent's edge. First to 10 points wins.
-
-    This version is built to more closely resemble the NES than
-    the original Pong machines or the Atari 2600 in terms of
-    resolution, though in widescreen (16:9) so it looks nicer on 
-    modern systems.
-]]
-
 -- push is a library that will allow us to draw our game at a virtual
 -- resolution, instead of however large our window is; used to provide
 -- a more retro aesthetic
---
 -- https://github.com/Ulydev/push
 push = require 'push'
 
@@ -34,8 +13,7 @@ Class = require 'class'
 -- and the logic for rendering them
 require 'Paddle'
 
--- our Ball class, which isn't much different than a Paddle structure-wise
--- but which will mechanically function very differently
+-- Ball Class
 require 'Ball'
 
 WINDOW_WIDTH = 1280
@@ -52,13 +30,11 @@ PADDLE_SPEED = 200
 ]]
 function love.load()
     
-    -- set love's default filter to "nearest-neighbor", which essentially
-    -- means there will be no filtering of pixels (blurriness), which is
-    -- important for a nice crisp, 2D look
+    -- No filtering of pixels (blurriness)
     love.graphics.setDefaultFilter('nearest', 'nearest')
 
     -- set the title of our application window
-    love.window.setTitle('Pong')
+    love.window.setTitle('EEGPong')
 
     -- "seed" the RNG so that calls to random are always random
     -- use the current time, since that will vary on startup every time
