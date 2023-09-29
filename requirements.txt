@@ -1,0 +1,8 @@
+brainflow==5.10.1
+cffi==1.16.0
+nptyping==1.4.4
+numpy==1.26.0
+pycparser==2.21
+pygame==2.5.2
+sounddevice==0.4.6
+typish==1.9.3
