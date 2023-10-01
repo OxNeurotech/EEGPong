@@ -1,4 +1,5 @@
 import pygame
+import random
 
 pygame.init()
 
@@ -58,7 +59,10 @@ class Striker:
 
     def getPaddle(self):
         return self.paddle
-        
+    
+    def getPosition(self):
+        return self.posx, self.posy
+
 
 class Ball:
     def __init__(self, posx, posy, radius, speed, colour):
@@ -67,12 +71,22 @@ class Ball:
         self.radius = radius
         self.speed = speed
         self.colour = colour
-        self.xFac = 1
-        self.yFac = -1
+        self.yFac = self.choose_yFac()
+        self.xFac = self.choose_xFac()
         self.ball = pygame.draw.circle(
             screen, self.colour, (self.posx, self.posy), self.radius
         )
-        self.firstTime = 1
+
+    def choose_yFac(self):
+        return random.choice([-1, -0.7, -0.5, 0.5, 0.7, 1])
+    
+    def choose_xFac(self):
+        if abs(self.yFac) == 1:
+            return 1
+        elif abs(self.yFac) == 0.7:
+            return 1.23
+        else:
+            return 1.32
 
     def display(self):
         self.ball = pygame.draw.circle(
@@ -88,11 +102,11 @@ class Ball:
             pygame.mixer.Sound.play(wallhit_sound)
             self.yFac *= -1
         
-        if self.posx <= 0 and self.firstTime:
-            self.firstTime = 0
+        if self.posx <= 0 and not rest:
+            rest = False
             return 1
-        elif self.posx >= WIDTH and self.firstTime:
-            self.firstTime = 0
+        elif self.posx >= WIDTH and not rest:
+            rest = False
             return -1
         else:
             return 0
@@ -100,8 +114,11 @@ class Ball:
     def reset(self):
         self.posx = WIDTH // 2
         self.posy = HEIGHT // 2
-        self.xFac *= -1
-        self.firstTime = 1
+        self.yFac = self.choose_yFac()
+        if self.xFac < 0:
+            self.xFac = self.choose_xFac()
+        else:
+            self.xFac = -self.choose_xFac()
     
     def hit_left(self):
         self.xFac = abs(self.xFac)
@@ -111,6 +128,9 @@ class Ball:
 
     def getBall(self):
         return self.ball
+    
+    def getPosition(self):
+        return self.posx, self.posy
 
 
 def main():
@@ -118,14 +138,14 @@ def main():
     rest = True
 
     # Game objects
-    paddle1 = Striker(20, HEIGHT // 2 - PADDLE_HEIGHT // 2, PADDLE_WIDTH, PADDLE_HEIGHT, 8, TEAL_GREEN)
-    paddle2 = Striker(WIDTH - 50, HEIGHT // 2 - PADDLE_HEIGHT // 2, PADDLE_WIDTH, PADDLE_HEIGHT, 8, TEAL_GREEN)
+    playerPaddle = Striker(20, HEIGHT // 2 - PADDLE_HEIGHT // 2, PADDLE_WIDTH, PADDLE_HEIGHT, 8, TEAL_GREEN)
+    aiPaddle = Striker(WIDTH - 50, HEIGHT // 2 - PADDLE_HEIGHT // 2, PADDLE_WIDTH, PADDLE_HEIGHT, 8, TEAL_GREEN)
     ball = Ball(WIDTH // 2, HEIGHT // 2, 15, 3, TEAL_GREEN)
     centre_line = pygame.Rect(WIDTH // 2 - CENTRE_WIDTH // 2, 0, CENTRE_WIDTH, CENTRE_HEIGHT)
 
     # Initial parameters of the players
-    paddle1Score, paddle2Score = 0, 0
-    paddle1yFac, paddle2yFac = 0, 0
+    playerScore, aiScore = 0, 0
+    player_yFac, ai_yFac = 0, 0
 
     while game_on:
         screen.fill(CORAL_PINK)
@@ -136,50 +156,53 @@ def main():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RETURN:
                     rest = False
-                if event.key == pygame.K_w:
-                    paddle1yFac = -1
-                if event.key == pygame.K_s:
-                    paddle1yFac = 1
-                if event.key == pygame.K_UP:
-                    paddle2yFac = -1
-                if event.key == pygame.K_DOWN:
-                    paddle2yFac = 1
+                if event.key == pygame.K_w or event.key == pygame.K_UP:
+                    player_yFac = -1
+                if event.key == pygame.K_s or event.key == pygame.K_DOWN:
+                    player_yFac = 1
+
                 # Quit the game if escape is pressed
                 if event.key == pygame.K_ESCAPE:
                     game_on = False
             if event.type == pygame.KEYUP:
-                if event.key == pygame.K_w or event.key == pygame.K_s:
-                    paddle1yFac = 0
-                if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
-                    paddle2yFac = 0
+               if (event.key == pygame.K_w or event.key == pygame.K_s or
+               event.key == pygame.K_UP or event.key == pygame.K_DOWN):
+                   player_yFac = 0
         
-        if pygame.Rect.colliderect(ball.getBall(), paddle1.getPaddle()):
+        if aiPaddle.getPosition()[1] + PADDLE_HEIGHT // 2 < ball.getPosition()[1]:
+            ai_yFac = 1
+        elif aiPaddle.getPosition()[1] + PADDLE_HEIGHT // 2 > ball.getPosition()[1]:
+            ai_yFac = -1
+        else:
+            ai_yFac = 0
+
+        if pygame.Rect.colliderect(ball.getBall(), playerPaddle.getPaddle()):
             pygame.mixer.Sound.play(hit_sound)
             ball.hit_left()
-        if pygame.Rect.colliderect(ball.getBall(), paddle2.getPaddle()):
+        if pygame.Rect.colliderect(ball.getBall(), aiPaddle.getPaddle()):
             pygame.mixer.Sound.play(hit_sound)
             ball.hit_right()
         
-        paddle1.update(paddle1yFac)
-        paddle2.update(paddle2yFac)
+        playerPaddle.update(player_yFac)
+        aiPaddle.update(ai_yFac)
         point = ball.update(rest)
 
         if point == -1:
-            paddle1Score += 1
+            playerScore += 1
         elif point == 1:
-            paddle2Score += 1
+            aiScore += 1
         
         if point:
             pygame.mixer.Sound.play(score_sound)
             ball.reset()
             rest = True
         
-        paddle1.display()
-        paddle2.display()
+        playerPaddle.display()
+        aiPaddle.display()
         ball.display()
 
-        paddle1.displayScore(paddle1Score, 400, 300, TEAL_GREEN)
-        paddle2.displayScore(paddle2Score, WIDTH - 400, 300, TEAL_GREEN)
+        playerPaddle.displayScore(playerScore, 400, 300, TEAL_GREEN)
+        aiPaddle.displayScore(aiScore, WIDTH - 400, 300, TEAL_GREEN)
 
         pygame.display.update()
         clock.tick(FPS)
