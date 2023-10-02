@@ -118,21 +118,6 @@ class NeuralOscillations():
         psd = DataFilter.get_psd(eeg_data, BoardShim.get_sampling_rate(self.board_id), window_function)
         return DataFilter.get_band_power(psd, lower_bound, upper_bound)
 
-    def overall_threshold(self, iteration, means):
-        return sum(means) / (iterations + 1) * 1.04
-
-    def moving_window_threshold(self, iteration, means, window_size):
-        if iteration < window_size:
-            return self.overall_threshold(iteration, means)
-        return sum(means[-window_size:]) / window_size * 1.04
-
-    def generate_tones(self, test_freq=440, faint_freq=880, loud_freq=220, amp=0.5):
-        time_interval_arr = np.arange(self.sampling_rate * self.sound_duration) / self.sampling_rate
-        test = amp * np.sin(2 * np.pi * test_freq* time_interval_arr)
-        faint = amp * np.sin(2 * np.pi * faint_freq* time_interval_arr)
-        loud = amp * np.sin(2 * np.pi * loud_freq* time_interval_arr)
-        return test, faint, loud
-
     def play_tone(self, tone):
         sd.play(tone, self.sampling_rate)
 
