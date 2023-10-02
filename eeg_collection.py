@@ -114,7 +114,7 @@ class NeuralOscillations():
         params.master_board = self.master_board
         return BoardShim(self.board_id, params)
 
-    def filter(self, eeg_data, lower_bound, upper_bound, window_function):
+    def band_limit(self, eeg_data, lower_bound, upper_bound, window_function):
         psd = DataFilter.get_psd(eeg_data, BoardShim.get_sampling_rate(self.board_id), window_function)
         return DataFilter.get_band_power(psd, lower_bound, upper_bound)
 
@@ -149,15 +149,15 @@ class NeuralOscillations():
                 dMean, tMean, aMean, bMean, gMean = 0, 0, 0, 0, 0
                 for c in range(eeg_channel_count):
                     if delta:
-                        dMean += np.mean(self.filter(data[eeg_channels[c]], self.delta_waves.lower, self.delta_waves.upper, self.window_function))
+                        dMean += np.mean(self.band_limit(data[eeg_channels[c]], self.delta_waves.lower, self.delta_waves.upper, self.window_function))
                     if theta:
-                        tMean += np.mean(self.filter(data[eeg_channels[c]], self.theta_waves.lower, self.theta_waves.upper, self.window_function))
+                        tMean += np.mean(self.band_limit(data[eeg_channels[c]], self.theta_waves.lower, self.theta_waves.upper, self.window_function))
                     if alpha:
-                        aMean += np.mean(self.filter(data[eeg_channels[c]], self.alpha_waves.lower, self.alpha_waves.upper, self.window_function))
+                        aMean += np.mean(self.band_limit(data[eeg_channels[c]], self.alpha_waves.lower, self.alpha_waves.upper, self.window_function))
                     if beta:
-                        bMean += np.mean(self.filter(data[eeg_channels[c]], self.beta_waves.lower, self.beta_waves.upper, self.window_function))
+                        bMean += np.mean(self.band_limit(data[eeg_channels[c]], self.beta_waves.lower, self.beta_waves.upper, self.window_function))
                     if gamma:
-                        gMean += np.mean(self.filter(data[eeg_channels[c]], self.gamma_waves.lower, self.gamma_waves.upper, self.window_function))
+                        gMean += np.mean(self.band_limit(data[eeg_channels[c]], self.gamma_waves.lower, self.gamma_waves.upper, self.window_function))
                 dMean = dMean / eeg_channel_count
                 tMean = tMean / eeg_channel_count
                 aMean = aMean / eeg_channel_count
@@ -176,6 +176,7 @@ class NeuralOscillations():
         except KeyboardInterrupt:
             board.stop_stream()
             board.release_session()
+            self.create_csv()
             raise Exception
 
     def create_csv(self):
