@@ -1,20 +1,21 @@
 #! /usr/bin/env python3
 
 from brainflow.board_shim import BoardShim, BrainFlowInputParams, BoardIds
-from brainflow.data_filter import DataFilter, FilterTypes, WindowOperations
+from brainflow.data_filter import DataFilter
+from brainflow.ml_model import MLModel, BrainFlowMetrics, BrainFlowClassifiers, BrainFlowModelParams
 import argparse
-import sounddevice as sd
+import pyautogui
 import numpy as np
 import time
 
 class NeuralOscillations():
-    def __init__(self, sound_duration=0.5, sampling_rate=44100, timeout=0, board_id=BoardIds.SYNTHETIC_BOARD, ip_port=0,
+    def __init__(self, timeout=0, board_id=BoardIds.SYNTHETIC_BOARD, ip_port=0,
                  ip_protocol=0, ip_address='', serial_port='', mac_address='',
                  streamer_params='', serial_number='', file='', master_board=BoardIds.NO_BOARD):
-        self.sound_duration = sound_duration
-        self.sampling_rate = sampling_rate
+        
         self.timeout = timeout
         self.board_id = board_id
+        self.sampling_rate = BoardShim.get_sampling_rate(self.board_id)
         self.ip_port = ip_port
         self.ip_protocol = ip_protocol
         self.ip_address = ip_address
@@ -117,9 +118,38 @@ class NeuralOscillations():
     def band_limit(self, eeg_data, lower_bound, upper_bound, window_function):
         psd = DataFilter.get_psd(eeg_data, BoardShim.get_sampling_rate(self.board_id), window_function)
         return DataFilter.get_band_power(psd, lower_bound, upper_bound)
+    
+   # Number of Samples has to be 512 to be compatible with all 5 waves
+    def eeg_metrics(self):
+        board = self.initialise_board()
+        eeg_channels = BoardShim.get_eeg_channels(self.board_id)
+        board.prepare_session()
+        board.start_stream()
 
-    def play_tone(self, tone):
-        sd.play(tone, self.sampling_rate)
+        # set up ML Model
+        concentration_params = BrainFlowModelParams(1, 0)
+        concentration = MLModel(concentration_params)
+        concentration.prepare()
+
+        time.sleep(2)
+        try:
+            while True:
+                time.sleep(0.7)
+                data = board.get_board_data(self.num_samples)
+                bands = DataFilter.get_avg_band_powers(data, eeg_channels, self.sampling_rate, True)
+                feature_vector = np.concatenate((bands[0], bands[1]))
+                prediction = concentration.predict(feature_vector)
+                if prediction < 0.5:
+                    pyautogui.press("s")
+                else:
+                    pyautogui.press("w")
+
+        except KeyboardInterrupt:
+            concentration.release()
+            board.stop_stream()
+            board.release_session()
+            self.create_csv()
+            raise Exception 
 
     # Number of Samples has to be 512 to be compatible with all 5 waves
     def eeg_recorder(self, eeg_channel_count=8, delta=True, theta=True, alpha=True, beta=True, gamma=True):
@@ -127,6 +157,7 @@ class NeuralOscillations():
         eeg_channels = BoardShim.get_eeg_channels(self.board_id)
         board.prepare_session()
         board.start_stream()
+
         time.sleep(3)
         try:
             while True:
@@ -172,9 +203,9 @@ class NeuralOscillations():
 def get_args():
     parser = argparse.ArgumentParser(add_help=False)
     args, remaining = parser.parse_known_args()
-    parser.add_argument('-b', '--board-id', type=int, help='CYTON_BOARD=0, SYNTHETIC_BOARD=-1')
-    parser.add_argument('-e', '--eeg-channel-count', type=int, help='Number of EEG channels connected')
-    parser.add_argument('-p', '--serial-port', type=str, help='Path to serial port')
+    parser.add_argument('-b', '--board-id', type=int, help='CYTON_BOARD=0, SYNTHETIC_BOARD=-1', required=False, default=-1)
+    parser.add_argument('-e', '--eeg-channel-count', type=int, help='Number of EEG channels connected', required=False, default=8)
+    parser.add_argument('-p', '--serial-port', type=str, help='Path to serial port',required=False, default="")
     args = parser.parse_args(remaining)
     config = vars(args)
     return config
@@ -188,4 +219,5 @@ if __name__ == "__main__":
     SERIAL_PORT = config.get('serial_port')
     # neural_oscillations = NeuralOscillations(board_id=BOARD_ID, serial_port=SERIAL_PORT)
     neural_oscillations = NeuralOscillations(serial_port=SERIAL_PORT, board_id=BOARD_ID)
-    neural_oscillations.eeg_recorder(eeg_channel_count=EEG_CHANNEL_COUNT)
+    #neural_oscillations.eeg_recorder(eeg_channel_count=EEG_CHANNEL_COUNT)
+    neural_oscillations.eeg_metrics()
