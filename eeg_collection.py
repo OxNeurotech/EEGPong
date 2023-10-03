@@ -8,7 +8,7 @@ import pyautogui
 import numpy as np
 import time
 
-class NeuralOscillations():
+class EEG():
     def __init__(self, timeout=0, board_id=BoardIds.SYNTHETIC_BOARD, ip_port=0,
                  ip_protocol=0, ip_address='', serial_port='', mac_address='',
                  streamer_params='', serial_number='', file='', master_board=BoardIds.NO_BOARD):
@@ -126,10 +126,13 @@ class NeuralOscillations():
         board.prepare_session()
         board.start_stream()
 
-        # set up ML Model
+        # set up ML Models
         concentration_params = BrainFlowModelParams(1, 0)
         concentration = MLModel(concentration_params)
+        relaxation_params = BrainFlowModelParams(0, 0)
+        relaxation = MLModel(relaxation_params)
         concentration.prepare()
+        relaxation.prepare()
 
         time.sleep(2)
         try:
@@ -138,20 +141,22 @@ class NeuralOscillations():
                 data = board.get_board_data(self.num_samples)
                 bands = DataFilter.get_avg_band_powers(data, eeg_channels, self.sampling_rate, True)
                 feature_vector = np.concatenate((bands[0], bands[1]))
-                prediction = concentration.predict(feature_vector)
-                if prediction < 0.5:
+                conc_prediction = concentration.predict(feature_vector)
+                relax_prediction = relaxation.predict(feature_vector)
+                if conc_prediction < relax_prediction:
                     pyautogui.press("s")
-                else:
+                elif conc_prediction > relax_prediction:
                     pyautogui.press("w")
 
         except KeyboardInterrupt:
             concentration.release()
+            relaxation.release()
             board.stop_stream()
             board.release_session()
             self.create_csv()
             raise Exception 
 
-    # Number of Samples has to be 512 to be compatible with all 5 waves
+    # Number of Samples has to be 512 to be compatible ith all 5 waves
     def eeg_recorder(self, eeg_channel_count=8, delta=True, theta=True, alpha=True, beta=True, gamma=True):
         board = self.initialise_board()
         eeg_channels = BoardShim.get_eeg_channels(self.board_id)
@@ -218,6 +223,6 @@ if __name__ == "__main__":
     EEG_CHANNEL_COUNT = config.get('eeg_channel_count')
     SERIAL_PORT = config.get('serial_port')
     # neural_oscillations = NeuralOscillations(board_id=BOARD_ID, serial_port=SERIAL_PORT)
-    neural_oscillations = NeuralOscillations(serial_port=SERIAL_PORT, board_id=BOARD_ID)
+    eeg = EEG(serial_port=SERIAL_PORT, board_id=BOARD_ID)
     #neural_oscillations.eeg_recorder(eeg_channel_count=EEG_CHANNEL_COUNT)
-    neural_oscillations.eeg_metrics()
+    eeg.eeg_metrics()

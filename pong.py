@@ -145,7 +145,7 @@ def main():
     rest = True
 
     # Game objects
-    playerPaddle = Striker(20, HEIGHT // 2 - PADDLE_HEIGHT // 2, PADDLE_WIDTH, PADDLE_HEIGHT, 10, TEAL_GREEN)
+    playerPaddle = Striker(20, HEIGHT // 2 - PADDLE_HEIGHT // 2, PADDLE_WIDTH, PADDLE_HEIGHT, 30, TEAL_GREEN)
     aiPaddle = Striker(WIDTH - 50, HEIGHT // 2 - PADDLE_HEIGHT // 2, PADDLE_WIDTH, PADDLE_HEIGHT, 8, TEAL_GREEN)
     ball = Ball(WIDTH // 2, HEIGHT // 2, 15, 3, TEAL_GREEN)
     centre_line = pygame.Rect(WIDTH // 2 - CENTRE_WIDTH // 2, 0, CENTRE_WIDTH, CENTRE_HEIGHT)
@@ -171,10 +171,10 @@ def main():
                 # Quit the game if escape is pressed
                 if event.key == pygame.K_ESCAPE:
                     game_on = False
-            """if event.type == pygame.KEYUP:
+            if event.type == pygame.KEYUP:
                if (event.key == pygame.K_w or event.key == pygame.K_s or
                event.key == pygame.K_UP or event.key == pygame.K_DOWN):
-                   player_yFac = 0"""
+                   player_yFac = 0
         
         if not ball.getRightHit():
             if ball.getPosition()[1] < aiPaddle.getPosition()[1] + PADDLE_HEIGHT // 2 + PADDLE_HEIGHT // 100:
